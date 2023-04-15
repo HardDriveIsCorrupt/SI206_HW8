@@ -138,40 +138,65 @@ def get_highest_rating(db): #Do this through DB as well
     conn = sqlite3.connect(db)
     c = conn.cursor()
 
+    categoriesName = {}
+    c.execute("SELECT id, category FROM categories")
+    cat_rows = c.fetchall()
+    for cat_row in cat_rows:
+        category_id = cat_row[0]
+        category_type = cat_row[1]
+        categoriesName[category_id] = category_type
     # Get the average rating for each category of restaurants
     c.execute("SELECT category_id, ROUND(AVG(rating), 1) AS avg_rating FROM restaurants GROUP BY category_id ORDER BY avg_rating DESC")
     categories = []
     avg_ratings_by_category = []
     for row in c.fetchall():
-        categories.append(row[0])
+        categories.append(categoriesName[row[0]])
         avg_ratings_by_category.append(row[1])
+
+    buildingsDic = {}
+    c.execute("SELECT id, building FROM buildings")
+    build_rows = c.fetchall()
+    for build_row in build_rows:
+        build_id = build_row[0]
+        build_num = build_row[1]
+        buildingsDic[build_id] = build_num
 
     # Get the average rating for each building
     c.execute("SELECT building_id, ROUND(AVG(rating), 1) AS avg_rating FROM restaurants GROUP BY building_id ORDER BY avg_rating DESC")
     buildings = []
     avg_ratings_by_building = []
     for row in c.fetchall():
-        buildings.append(row[0])
+        buildings.append(buildingsDic[row[0]])
         avg_ratings_by_building.append(row[1])
 
+    sorted_categories, sorted_ratings = zip(*sorted(zip(categories, avg_ratings_by_category), key=lambda x: x[1], reverse=False))
     # Plot the bar charts
     fig = plt.figure(figsize=(8,8))
-    plt.subplot(211)
-    plt.barh(categories, avg_ratings_by_category)
+    ax1 = plt.subplot(211)
+    plt.barh(sorted_categories, sorted_ratings)
     plt.title("Average ratings by category")
     plt.xlabel("Average rating")
     plt.ylabel("Category")
     plt.xlim(0, 5)
 
-    plt.subplot(212)
-    plt.barh(buildings, avg_ratings_by_building)
+    sorted_buildings, sorted_ratingsB = zip(*sorted(zip(buildings, avg_ratings_by_building), key=lambda x: x[1], reverse=True))
+
+    ax2 = plt.subplot(212)
+    plt.barh(sorted_buildings, sorted_ratingsB)
     plt.title("Average ratings by building")
     plt.xlabel("Average rating")
     plt.ylabel("Building")
     plt.xlim(0, 5)
-
     plt.tight_layout()
     plt.show()
+
+    highest_category = sorted_categories[-1]
+    highest_category_rating = sorted_ratings[-1]
+
+    highest_building = sorted_buildings[-1]
+    highest_building_rating = sorted_ratingsB[-1]
+
+    return [(highest_category, highest_category_rating), (highest_building, highest_building_rating)]
 
 #Try calling your functions here
 def main():
