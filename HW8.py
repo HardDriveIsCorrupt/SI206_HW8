@@ -1,6 +1,6 @@
-# Your name: 
-# Your student id:
-# Your email:
+# Your name: Ethan Lancaster
+# Your student id: 50763057
+# Your email: ethanlan@umich.edu
 # List who you have worked with on this homework:
 
 import matplotlib.pyplot as plt
