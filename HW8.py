@@ -17,10 +17,8 @@ def load_rest_data(db):
     """
     conn = sqlite3.connect(db)
     c = conn.cursor()
-
     c.execute("SELECT name, category_id, building_id, rating FROM restaurants")
     rows = c.fetchall()
-
     categories = {}
     c.execute("SELECT id, category FROM categories")
     cat_rows = c.fetchall()
@@ -28,7 +26,6 @@ def load_rest_data(db):
         category_id = cat_row[0]
         category_type = cat_row[1]
         categories[category_id] = category_type
-
     buildings = {}
     c.execute("SELECT id, building FROM buildings")
     build_rows = c.fetchall()
@@ -36,7 +33,6 @@ def load_rest_data(db):
         build_id = build_row[0]
         build_num = build_row[1]
         buildings[build_id] = build_num
-
     restaurants = {}
     for row in rows:
         name = row[0]
@@ -48,9 +44,7 @@ def load_rest_data(db):
             "building": buildings[building_id],
             "rating": rating
         }
-
     conn.close()
-
     return restaurants
 
 def plot_rest_categories(db):
@@ -61,10 +55,8 @@ def plot_rest_categories(db):
     """
     conn = sqlite3.connect(db)
     c = conn.cursor()
-
     c.execute("SELECT category_id, COUNT(name) FROM restaurants GROUP BY category_id")
     rows = c.fetchall()
-
     categoriesName = {}
     c.execute("SELECT id, category FROM categories")
     cat_rows = c.fetchall()
@@ -72,18 +64,13 @@ def plot_rest_categories(db):
         category_id = cat_row[0]
         category_type = cat_row[1]
         categoriesName[category_id] = category_type
-
-
     categories = {}
     for row in rows:
         categoryName = categoriesName[row[0]]
         count = row[1]
         categories[categoryName] = count
-
     conn.close()
-
     sorted_categories = dict(sorted(categories.items(), key=lambda x: x[1] if x[1] is not None else 0, reverse=False))
-
     plt.barh(list(sorted_categories.keys()), list(sorted_categories.values()))
     plt.xticks(rotation=90)
     plt.ylabel("Restaurant Category", fontsize=10)
@@ -91,7 +78,6 @@ def plot_rest_categories(db):
     plt.xlabel("Number of Restaurants")
     plt.tight_layout()
     plt.show()
-
     return sorted_categories
 
 def find_rest_in_building(building_num, db):
@@ -102,7 +88,6 @@ def find_rest_in_building(building_num, db):
     '''
     conn = sqlite3.connect(db)
     c = conn.cursor()
-
     buildings = {}
     c.execute("SELECT id, building FROM buildings")
     build_rows = c.fetchall()
@@ -110,17 +95,13 @@ def find_rest_in_building(building_num, db):
         build_id = build_row[0]
         build_num = build_row[1]
         buildings[build_num] = build_id
-
     c.execute("SELECT name FROM restaurants WHERE building_id = ? ORDER BY rating DESC", (buildings[building_num],))
     rows = c.fetchall()
- 
     restaurants = []
     for row in rows:
         name = row[0]
         restaurants.append(name)
-
     conn.close()
-
     return restaurants
 
 #EXTRA CREDIT
@@ -137,7 +118,6 @@ def get_highest_rating(db): #Do this through DB as well
     """
     conn = sqlite3.connect(db)
     c = conn.cursor()
-
     categoriesName = {}
     c.execute("SELECT id, category FROM categories")
     cat_rows = c.fetchall()
@@ -145,14 +125,12 @@ def get_highest_rating(db): #Do this through DB as well
         category_id = cat_row[0]
         category_type = cat_row[1]
         categoriesName[category_id] = category_type
-    # Get the average rating for each category of restaurants
     c.execute("SELECT category_id, ROUND(AVG(rating), 1) AS avg_rating FROM restaurants GROUP BY category_id ORDER BY avg_rating DESC")
     categories = []
     avg_ratings_by_category = []
     for row in c.fetchall():
         categories.append(categoriesName[row[0]])
         avg_ratings_by_category.append(row[1])
-
     buildingsDic = {}
     c.execute("SELECT id, building FROM buildings")
     build_rows = c.fetchall()
@@ -160,17 +138,13 @@ def get_highest_rating(db): #Do this through DB as well
         build_id = build_row[0]
         build_num = build_row[1]
         buildingsDic[build_id] = build_num
-
-    # Get the average rating for each building
     c.execute("SELECT building_id, ROUND(AVG(rating), 1) AS avg_rating FROM restaurants GROUP BY building_id ORDER BY avg_rating DESC")
     buildings = []
     avg_ratings_by_building = []
     for row in c.fetchall():
         buildings.append(buildingsDic[row[0]])
         avg_ratings_by_building.append(row[1])
-
     sorted_categories, sorted_ratings = zip(*sorted(zip(categories, avg_ratings_by_category), key=lambda x: x[1], reverse=False))
-    # Plot the bar charts
     fig = plt.figure(figsize=(8,8))
     ax1 = plt.subplot(211)
     plt.barh(sorted_categories, sorted_ratings)
@@ -178,9 +152,7 @@ def get_highest_rating(db): #Do this through DB as well
     plt.xlabel("Average rating")
     plt.ylabel("Category")
     plt.xlim(0, 5)
-
     sorted_buildings, sorted_ratingsB = zip(*sorted(zip(buildings, avg_ratings_by_building), key=lambda x: x[1], reverse=True))
-
     ax2 = plt.subplot(212)
     plt.barh(sorted_buildings, sorted_ratingsB)
     plt.title("Average ratings by building")
@@ -189,13 +161,10 @@ def get_highest_rating(db): #Do this through DB as well
     plt.xlim(0, 5)
     plt.tight_layout()
     plt.show()
-
     highest_category = sorted_categories[-1]
     highest_category_rating = sorted_ratings[-1]
-
     highest_building = sorted_buildings[-1]
     highest_building_rating = sorted_ratingsB[-1]
-
     return [(highest_category, highest_category_rating), (highest_building, highest_building_rating)]
 
 #Try calling your functions here
