@@ -103,9 +103,17 @@ def find_rest_in_building(building_num, db):
     conn = sqlite3.connect(db)
     c = conn.cursor()
 
-    c.execute("SELECT name FROM restaurants WHERE building = ? ORDER BY rating DESC", (building_num,))
-    rows = c.fetchall()
+    buildings = {}
+    c.execute("SELECT id, building FROM buildings")
+    build_rows = c.fetchall()
+    for build_row in build_rows:
+        build_id = build_row[0]
+        build_num = build_row[1]
+        buildings[build_num] = build_id
 
+    c.execute("SELECT name FROM restaurants WHERE building_id = ? ORDER BY rating DESC", (buildings[building_num],))
+    rows = c.fetchall()
+ 
     restaurants = []
     for row in rows:
         name = row[0]
@@ -130,43 +138,40 @@ def get_highest_rating(db): #Do this through DB as well
     conn = sqlite3.connect(db)
     c = conn.cursor()
 
-    # get the highest-rated category and its average rating
-    c.execute("SELECT category, AVG(rating) FROM restaurants GROUP BY category ORDER BY AVG(rating) DESC LIMIT 1")
-    category_data = c.fetchone()
+    # Get the average rating for each category of restaurants
+    c.execute("SELECT category_id, ROUND(AVG(rating), 1) AS avg_rating FROM restaurants GROUP BY category_id ORDER BY avg_rating DESC")
+    categories = []
+    avg_ratings_by_category = []
+    for row in c.fetchall():
+        categories.append(row[0])
+        avg_ratings_by_category.append(row[1])
 
-    # get the highest-rated building and its average rating
-    c.execute("SELECT building, AVG(rating) FROM restaurants GROUP BY building ORDER BY AVG(rating) DESC LIMIT 1")
-    building_data = c.fetchone()
+    # Get the average rating for each building
+    c.execute("SELECT building_id, ROUND(AVG(rating), 1) AS avg_rating FROM restaurants GROUP BY building_id ORDER BY avg_rating DESC")
+    buildings = []
+    avg_ratings_by_building = []
+    for row in c.fetchall():
+        buildings.append(row[0])
+        avg_ratings_by_building.append(row[1])
 
-    conn.close()
+    # Plot the bar charts
+    fig = plt.figure(figsize=(8,8))
+    plt.subplot(211)
+    plt.barh(categories, avg_ratings_by_category)
+    plt.title("Average ratings by category")
+    plt.xlabel("Average rating")
+    plt.ylabel("Category")
+    plt.xlim(0, 5)
 
-    highest_rating = [(category_data[0], category_data[1]), (building_data[0], building_data[1])]
-
-    # plot the bar charts
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-
-    # plot the category ratings chart
-    c.execute("SELECT category, AVG(rating) FROM restaurants GROUP BY category ORDER BY AVG(rating) DESC")
-    cat_data = c.fetchall()
-    categories, ratings = zip(*cat_data)
-    ax1.bar(categories, ratings, color='blue')
-    ax1.set_xlabel('Category')
-    ax1.set_ylabel('Average Rating')
-    ax1.set_title('Highest Rated Restaurant Categories')
-
-    # plot the building ratings chart
-    c.execute("SELECT building, AVG(rating) FROM restaurants GROUP BY building ORDER BY AVG(rating) DESC")
-    building_data = c.fetchall()
-    buildings, ratings = zip(*building_data)
-    ax2.bar(buildings, ratings, color='red')
-    ax2.set_xlabel('Building Number')
-    ax2.set_ylabel('Average Rating')
-    ax2.set_title('Highest Rated Buildings')
+    plt.subplot(212)
+    plt.barh(buildings, avg_ratings_by_building)
+    plt.title("Average ratings by building")
+    plt.xlabel("Average rating")
+    plt.ylabel("Building")
+    plt.xlim(0, 5)
 
     plt.tight_layout()
     plt.show()
-
-    return highest_rating
 
 #Try calling your functions here
 def main():
